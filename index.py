@@ -39,8 +39,8 @@ def go_room():
         print("index", index)
         print("live", live.tag_name)
 
-        # if index <= watchIndex:
-        #     continue
+        if index <= watchIndex:
+            continue
         room_id = live.find_element_by_class_name("js-liveroom").get_attribute("data-roomid")
 
         if room_id in enter_id_list:
@@ -54,9 +54,11 @@ def go_room():
             browser.find_element_by_id("icon-room-twitter-post").click()
             time.sleep(2)
             browser.find_element_by_id("twitter-post-button").click()
+            time.sleep(5)
             try:
                 WebDriverWait(browser, 100, 1).until(lambda x: x.find_element_by_id("bonus").is_displayed())
             except TimeoutException:
+                print("bonus time out")
                 browser.back()
                 time.sleep(4)
                 # watchIndex = index
@@ -75,7 +77,15 @@ def go_room():
             break
         except:
             print( room_id, "try except")
-            continue
+            if browser.current_url == "https://www.showroom-live.com/onlive" :
+                continue
+            else:
+                browser.get("https://www.showroom-live.com/onlive")
+                time.sleep(4)
+                go_room()
+                break
+
+
 
 
 go_room()
