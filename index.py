@@ -39,7 +39,7 @@ def go_room():
         print("index", index)
         print("live", live.tag_name)
 
-        if index <= watchIndex:
+        if index < watchIndex:
             continue
         room_id = live.find_element_by_class_name("js-liveroom").get_attribute("data-roomid")
 
@@ -52,11 +52,29 @@ def go_room():
             enter_id_list.append(room_id)
             time.sleep(4)
             browser.find_element_by_id("icon-room-twitter-post").click()
-            time.sleep(2)
+            time.sleep(3)
+            print("twitter-post-button before")
             browser.find_element_by_id("twitter-post-button").click()
-            time.sleep(5)
+            print("twitter-post-button click")
+
             try:
-                WebDriverWait(browser, 100, 1).until(lambda x: x.find_element_by_id("bonus").is_displayed())
+                element = WebDriverWait(browser, 5).until(lambda x: x.find_element_by_class_name("toast-error"))
+                print("element.text",element.text)
+                if '免費獲得禮物的數量將限制在' in element.text:
+                    browser.close()
+                    break
+                else:
+                    browser.back()
+                    time.sleep(4)
+                    go_room()
+                    break
+            except TimeoutException:
+                print("presence_of_element_located time out")
+                pass
+
+            try:
+                print("wait bonus")
+                WebDriverWait(browser, 60, 1).until(lambda x: x.find_element_by_id("bonus").is_displayed())
             except TimeoutException:
                 print("bonus time out")
                 browser.back()
@@ -65,7 +83,7 @@ def go_room():
                 go_room()
                 break
 
-            time.sleep(10)
+            time.sleep(4)
             count = browser.find_elements_by_class_name("gift-free-num-label")[2].text
             if count == '× 99':
                 browser.close()
