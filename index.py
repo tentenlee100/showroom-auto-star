@@ -2,12 +2,15 @@ import time
 
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 import config
 from selenium import webdriver
 
 def go_room():
     print("go_room")
     # global watchIndex
+    # 等待畫面渲染完成
     WebDriverWait(browser, 60).until(lambda x: x.find_element_by_class_name("contentlist-link"))
     living = browser.find_elements_by_class_name("contentlist-link")
     for index, live in enumerate(living):
@@ -19,17 +22,25 @@ def go_room():
         room_id = live.find_element_by_class_name("js-liveroom").get_attribute("data-roomid")
 
         if room_id in enter_id_list:
-            print(room_id, "in enter_id_list")
+            #  room id 已加拿過，跳過下一段
+            #  print(room_id, "in enter_id_list")
             continue
         try:
             live.find_element_by_class_name("icon-official")
+            # 進入房間
             live.find_element_by_class_name("listcard-join-btn").click()
+
+            #  將本次進入的room id 記錄下來
             enter_id_list.append(room_id)
-            time.sleep(2)
+
+            WebDriverWait(browser, 20).until(lambda x: x.find_element_by_id("room-gift-item-wrapper").find_element_by_class_name("gift-free-num-label").text != "×")
 
             all99 = False
-            for element in browser.find_elements_by_class_name("gift-free-num-label"):
+            for index2, element in enumerate(browser.find_element_by_id("room-gift-item-wrapper").find_elements_by_class_name("gift-free-num-label")) :
+                print("element.text :" + element.text)
                 all99 = element.text == '× 99'
+                if index2 == 4:
+                    break
                 if not all99:
                     break
 
@@ -37,11 +48,10 @@ def go_room():
                 browser.close()
                 break
 
-            # browser.find_element_by_id("icon-room-twitter-post").click()
-            # time.sleep(2)
-            # print("twitter-post-button before")
-            # browser.find_element_by_id("twitter-post-button").click()
-            # print("twitter-post-button click")
+            browser.find_element_by_id("icon-room-twitter-post").click()
+            WebDriverWait(browser, 10).until(lambda x: x.find_element_by_id("twitter-dialog").is_displayed())
+            browser.find_element_by_id("twitter-post-button").click()
+            print("twitter-post-button click")
 
             try:
                 element = WebDriverWait(browser, 5).until(lambda x: x.find_element_by_class_name("toast-error"))
@@ -91,31 +101,36 @@ def go_room():
 browser = webdriver.Chrome(config.chromedriver_path)
 browser.get("https://www.showroom-live.com/onlive")  # 開啟連結
 
+# 開啟登入視窗
 browser.execute_script("showLoginDialog();")
 time.sleep(1)
 
+# 輸入帳號
 pdtfamily = browser.find_element_by_css_selector("#js-login .js-input-account-id")
 print(pdtfamily)
 pdtfamily.click()
 pdtfamily.send_keys(config.ACCOUNT)
 time.sleep(1)
 
+# 輸入密碼
 pdtfamily = browser.find_element_by_css_selector("#js-login .js-input-password")
 pdtfamily.send_keys(config.PASSWORD)
-time.sleep(1)
 
-pdtfamily = browser.find_element_by_id("js-login-submit").click()
+browser.find_element_by_id("js-login-submit").click()
 
-time.sleep(2)
+
+# 等待手動輸入驗證碼
+WebDriverWait(browser, 120).until(lambda x: not x.find_element_by_id("js-account-dialog").is_displayed())
+
+print("login dialog close")
+#
+# time.sleep(2)
 
 # living = browser.find_elements_by_class_name("contentlist-link")
 
 watchIndex = 0
 
 enter_id_list = []
-
-
-
 
 go_room()
 
